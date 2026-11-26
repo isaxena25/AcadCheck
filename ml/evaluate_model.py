@@ -17,8 +17,10 @@ from sklearn.metrics import (
 from ml.preprocessing import clean_text
 
 
+# Project root directory
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
+# Dataset and trained model paths
 DATA_PATH = ROOT_DIR / "data" / "dataset.csv"
 MODEL_PATH = ROOT_DIR / "models" / "ai_detector.pkl"
 
@@ -27,13 +29,16 @@ def evaluate_model():
 
     print("Loading dataset...")
 
+    # Load dataset
     df = pd.read_csv(DATA_PATH)
 
     # Remove rows with missing text or labels
     df = df.dropna(subset=["text", "label"])
 
-    # Clean the text
+    # Convert text into string format
     df["text"] = df["text"].astype(str)
+
+    # Clean the text using preprocessing function
     df["text"] = df["text"].apply(clean_text)
 
     # Convert text labels into numeric labels
@@ -41,6 +46,7 @@ def evaluate_model():
         "human": 0,
         "Human": 0,
         "human-written": 0,
+
         "machine": 1,
         "Machine": 1,
         "ai": 1,
@@ -48,6 +54,7 @@ def evaluate_model():
         "ai-generated": 1
     }
 
+    # Map labels to numeric values
     df["label"] = (
         df["label"]
         .astype(str)
@@ -58,18 +65,19 @@ def evaluate_model():
     # Remove labels that could not be mapped
     df = df.dropna(subset=["label"])
 
-    # Convert labels to integers
+    # Convert labels into integers
     df["label"] = df["label"].astype(int)
 
-    # Keep only valid labels
+    # Keep only valid labels: 0 = Human, 1 = AI
     df = df[df["label"].isin([0, 1])]
 
     print("Total samples:", len(df))
 
+    # Separate input text and target labels
     X = df["text"]
     y = df["label"]
 
-    # Use the same split as training
+    # Use the same train-test split as training
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
@@ -80,11 +88,13 @@ def evaluate_model():
 
     print("Loading trained model...")
 
+    # Load the trained machine learning model
     model = joblib.load(MODEL_PATH)
 
-    # Generate predictions
+    # Generate predictions on test data
     predictions = model.predict(X_test)
 
+    # Calculate evaluation metrics
     print("\nAccuracy:",
           accuracy_score(y_test, predictions))
 
@@ -97,14 +107,18 @@ def evaluate_model():
     print("F1 Score:",
           f1_score(y_test, predictions))
 
+    # Display detailed classification report
     print("\nClassification Report:")
+
     print(classification_report(
         y_test,
         predictions,
         target_names=["Human", "AI"]
     ))
 
+    # Display confusion matrix
     print("\nConfusion Matrix:")
+
     print(confusion_matrix(y_test, predictions))
 
 

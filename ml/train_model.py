@@ -1,3 +1,4 @@
+
 import pandas as pd
 import joblib
 
@@ -11,9 +12,10 @@ from sklearn.pipeline import Pipeline
 from ml.preprocessing import clean_text
 
 
-# Project paths
+# Project root directory
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
+# Dataset and model paths
 DATA_PATH = ROOT_DIR / "data" / "dataset.csv"
 MODEL_PATH = ROOT_DIR / "models" / "ai_detector.pkl"
 
@@ -25,52 +27,61 @@ def train_model():
     # Load dataset
     df = pd.read_csv(DATA_PATH)
 
-    # Check required columns
+    # Check whether required columns exist
     if "text" not in df.columns or "label" not in df.columns:
         raise ValueError(
             "Dataset must contain 'text' and 'label' columns."
         )
 
-    # Remove missing values
+    # Remove rows with missing text or labels
     df = df.dropna(subset=["text", "label"])
 
-    # Convert text to string
+    # Convert text into string format
     df["text"] = df["text"].astype(str)
 
-    # Clean text
+    # Clean text using preprocessing function
     df["text"] = df["text"].apply(clean_text)
 
     # Remove empty text
     df = df[df["text"].str.strip() != ""]
 
-    # Convert labels to numeric
+    # Convert text labels into numeric labels
     label_mapping = {
-    "human": 0,
-    "Human": 0,
-    "human-written": 0,
+        "human": 0,
+        "Human": 0,
+        "human-written": 0,
 
-    "machine": 1,
-    "Machine": 1,
-    "ai": 1,
-    "AI": 1,
-    "ai-generated": 1
-}
+        "machine": 1,
+        "Machine": 1,
+        "ai": 1,
+        "AI": 1,
+        "ai-generated": 1
+    }
 
-    df["label"] = pd.to_numeric(
-        df["label"], errors="coerce"
+    # Map labels to numeric values
+    df["label"] = (
+        df["label"]
+        .astype(str)
+        .str.strip()
+        .map(label_mapping)
     )
 
+    # Remove labels that could not be mapped
     df = df.dropna(subset=["label"])
 
-    # Keep only binary labels
+    # Keep only valid binary labels
     df = df[df["label"].isin([0, 1])]
 
+    # Convert labels into integers
+    df["label"] = df["label"].astype(int)
+
+    # Separate input text and target labels
     X = df["text"]
-    y = df["label"].astype(int)
+    y = df["label"]
 
     print("Total samples:", len(df))
 
-    # Split dataset into training and testing
+    # Split dataset into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
@@ -79,7 +90,7 @@ def train_model():
         stratify=y
     )
 
-    # Create ML pipeline
+    # Create machine learning pipeline
     model = Pipeline([
         (
             "tfidf",
@@ -102,12 +113,13 @@ def train_model():
     # Train the model
     model.fit(X_train, y_train)
 
-    # Save trained model
+    # Create models directory if it does not exist
     MODEL_PATH.parent.mkdir(
         parents=True,
         exist_ok=True
     )
 
+    # Save the trained model
     joblib.dump(model, MODEL_PATH)
 
     print("Model trained successfully!")

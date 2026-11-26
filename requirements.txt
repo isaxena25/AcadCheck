@@ -7,3 +7,5 @@ matplotlib
 seaborn
 flask
 flask-cors
+pypdf
+python-docx
