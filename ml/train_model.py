@@ -44,14 +44,17 @@ def train_model():
     df = df[df["text"].str.strip() != ""]
 
     # Convert labels to numeric
-    df["label"] = df["label"].replace({
-        "human": 0,
-        "Human": 0,
-        "human-written": 0,
-        "ai": 1,
-        "AI": 1,
-        "ai-generated": 1
-    })
+    label_mapping = {
+    "human": 0,
+    "Human": 0,
+    "human-written": 0,
+
+    "machine": 1,
+    "Machine": 1,
+    "ai": 1,
+    "AI": 1,
+    "ai-generated": 1
+}
 
     df["label"] = pd.to_numeric(
         df["label"], errors="coerce"

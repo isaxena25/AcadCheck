@@ -1,3 +1,4 @@
+
 import pandas as pd
 import joblib
 
@@ -28,29 +29,45 @@ def evaluate_model():
 
     df = pd.read_csv(DATA_PATH)
 
+    # Remove rows with missing text or labels
     df = df.dropna(subset=["text", "label"])
 
+    # Clean the text
     df["text"] = df["text"].astype(str)
     df["text"] = df["text"].apply(clean_text)
 
-    df["label"] = df["label"].replace({
+    # Convert text labels into numeric labels
+    label_mapping = {
         "human": 0,
         "Human": 0,
         "human-written": 0,
+        "machine": 1,
+        "Machine": 1,
         "ai": 1,
         "AI": 1,
         "ai-generated": 1
-    })
+    }
 
-    df["label"] = pd.to_numeric(
-        df["label"], errors="coerce"
+    df["label"] = (
+        df["label"]
+        .astype(str)
+        .str.strip()
+        .map(label_mapping)
     )
 
+    # Remove labels that could not be mapped
     df = df.dropna(subset=["label"])
+
+    # Convert labels to integers
+    df["label"] = df["label"].astype(int)
+
+    # Keep only valid labels
     df = df[df["label"].isin([0, 1])]
 
+    print("Total samples:", len(df))
+
     X = df["text"]
-    y = df["label"].astype(int)
+    y = df["label"]
 
     # Use the same split as training
     X_train, X_test, y_train, y_test = train_test_split(
